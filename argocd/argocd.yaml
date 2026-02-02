@@ -7,7 +7,7 @@ spec:
   project: default
   source:
     repoURL: https://github.com/mainakdas73/recruitment-project.git
-    path: .
+    path: K8s
     targetRevision: hr-repo
   destination:
     server: https://kubernetes.default.svc
