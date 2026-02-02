@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Onboarding - HR System</title>
+<link rel="stylesheet" href="style.css" />
+</head>
+<body>
+<header class="header">
+  <div class="container header-content">
+    <h1>Onboarding Process</h1>
+    <nav>
+      <a href="dashboard.html" class="nav-link">Dashboard</a>
+      <button id="logoutBtn" class="btn-logout">Logout</button>
+    </nav>
+  </div>
+</header>
+
+<main class="container glass-card">
+  <p id="onboardingInfo">Your onboarding details will be displayed here.</p>
+  <button id="updateOnboardingBtn" class="btn-primary">Update Onboarding Info</button>
+</main>
+
+<script>
+document.addEventListener('DOMContentLoaded', async () => {
+  const onboardingInfo = document.getElementById('onboardingInfo');
+  try {
+    const res = await fetch('/api/onboarding');
+    const data = await res.json();
+    if (res.ok) {
+      onboardingInfo.textContent = data.details || 'No onboarding info found.';
+    } else {
+      onboardingInfo.textContent = data.message || 'Failed to load onboarding info.';
+    }
+  } catch {
+    onboardingInfo.textContent = 'Server error. Please try again.';
+  }
+});
+
+document.getElementById('updateOnboardingBtn').addEventListener('click', async () => {
+  const newDetails = prompt('Enter your updated onboarding info:');
+  if (!newDetails) return;
+  try {
+    const res = await fetch('/api/onboarding', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ details: newDetails })
+    });
+    const data = await res.json();
+    if (res.ok) {
+      document.getElementById('onboardingInfo').textContent = data.details;
+      alert('Onboarding info updated!');
+    } else {
+      alert(data.message || 'Update failed.');
+    }
+  } catch {
+    alert('Server error. Please try again.');
+  }
+});
+</script>
+</body>
+</html>

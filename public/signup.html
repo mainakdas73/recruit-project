@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Employee Signup - HR System</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div class="container login-container glass-card">
+    <h2>Sapient Employee Signup</h2>
+    <form id="signupForm">
+      <!-- Full Name -->
+      <label for="fullName">Full Name</label>
+      <input type="text" id="fullName" name="fullName" placeholder="Enter Full Name" required />
+
+      <!-- Employee ID -->
+      <label for="empId">Employee ID</label>
+      <input type="text" id="empId" name="empId" placeholder="Enter Employee ID" required />
+
+      <!-- Email -->
+      <label for="email">Email</label>
+      <input type="text" id="email" name="email" placeholder="Enter Email Address" required />
+
+      <!-- Password -->
+      <label for="password">Password</label>
+      <input type="password" id="password" name="password" placeholder="Enter Password" required />
+
+      <!-- Confirm Password -->
+      <label for="confirmPassword">Confirm Password</label>
+      <input type="password" id="confirmPassword" name="confirmPassword" placeholder="Confirm Password" required />
+
+      <!-- Error message -->
+      <p id="signupError" class="error-msg"></p>
+
+      <!-- Signup button -->
+      <button type="submit" class="btn-primary">Signup</button>
+    </form>
+  </div>
+
+  <!-- Grievance Footer -->
+  <footer class="container glass-card" style="margin-top: 20px; text-align: center;">
+    <p style="color: #e1e7f0; font-weight: 600;">
+      Having issues? <a href="mailto:hrsupport@sapient.com" style="color: #38a1db; text-decoration: underline;">Contact HR Support</a>
+      or file a <a href="#" style="color: #38a1db; text-decoration: underline;">Grievance Report</a>.
+    </p>
+  </footer>
+
+  <!-- JS -->
+  <script src="script.js"></script>
+  <script>
+    // ...existing code...
+
+// Signup page logic
+if (document.getElementById('signupForm')) {
+  document.getElementById('signupForm').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    const fullName = document.getElementById('fullName').value.trim();
+    const empId = document.getElementById('empId').value.trim();
+    const email = document.getElementById('email').value.trim();
+    const password = document.getElementById('password').value;
+    const confirmPassword = document.getElementById('confirmPassword').value;
+    const signupError = document.getElementById('signupError');
+    signupError.textContent = '';
+    signupError.style.color = '';
+
+    if (password !== confirmPassword) {
+      signupError.textContent = 'Passwords do not match.';
+      return;
+    }
+
+    // Basic email validation
+    if (!/^[\w-.]+@([\w-]+\.)+[\w-]{2,4}$/.test(email)) {
+      signupError.textContent = 'Please enter a valid email address.';
+      return;
+    }
+
+    try {
+      const res = await fetch('/api/signup', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ fullName, empId, email, password })
+      });
+      const data = await res.json();
+      if (res.ok) {
+        signupError.style.color = 'green';
+        signupError.textContent = 'Signup successful! Redirecting to login...';
+        setTimeout(() => window.location.href = '/login.html', 1500);
+      } else {
+        signupError.textContent = data.message || 'Signup failed.';
+      }
+    } catch {
+      signupError.textContent = 'Server error. Please try again.';
+    }
+  });
+}
+
+// ...existing code...
+  </script>
+</body>
+</html>

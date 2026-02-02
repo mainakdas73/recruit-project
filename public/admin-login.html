@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>HR Admin Login - HR System</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <main class="container glass-card">
+    <h1>HR Admin Login</h1>
+    <form id="adminLoginForm">
+      <label for="adminId">Admin ID:</label>
+      <input type="text" id="adminId" name="adminId" placeholder="Enter Admin ID" required />
+
+      <label for="password">Password:</label>
+      <input type="password" id="password" name="password" placeholder="Enter Password" required />
+
+      <p class="error-msg" id="loginError"></p>
+
+      <button type="submit" class="btn-primary">Login as Admin</button>
+    </form>
+
+    <p style="margin-top: 20px; text-align: center;">
+      Employee? <a href="login.html" style="color: #38a1db; font-weight: bold;">Employee Login</a>
+    </p>
+  </main>
+
+  <script>
+    document.getElementById('adminLoginForm').addEventListener('submit', async function(e) {
+      e.preventDefault();
+      const adminId = document.getElementById('adminId').value.trim();
+      const password = document.getElementById('password').value;
+      const errorMsg = document.getElementById('loginError');
+      errorMsg.textContent = '';
+
+      if (!adminId || !password) {
+        errorMsg.textContent = 'Please enter Admin ID and password.';
+        return;
+      }
+
+      try {
+        const res = await fetch('/api/admin/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ adminId, password })
+        });
+        const data = await res.json();
+        
+        if (res.ok) {
+          sessionStorage.setItem('adminId', adminId);
+          window.location.href = 'admin-dashboard.html';
+        } else {
+          errorMsg.textContent = data.message || 'Admin login failed';
+        }
+      } catch (err) {
+        errorMsg.textContent = 'Server error. Please try again.';
+      }
+    });
+  </script>
+</body>
+</html>

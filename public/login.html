@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Login - HR System</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <main class="container glass-card">
+    <h1>Employee Login</h1>
+    <form id="loginForm">
+      <label for="empId">Employee ID:</label>
+      <input type="text" id="empId" name="empId" required />
+
+      <label for="password">Password:</label>
+      <input type="password" id="password" name="password" required />
+
+      <p class="error-msg" id="loginError"></p>
+
+      <button type="submit" class="btn-primary">Login</button>
+    </form>
+
+    <p style="margin-top: 20px; text-align: center;">
+      Don't have an account? <a href="signup.html" style="color: #38a1db; font-weight: bold;">Sign Up</a>
+    </p>
+    
+    <p style="margin-top: 15px; text-align: center; font-size: 0.9rem;">
+      HR Admin? <a href="admin-login.html" style="color: #e74c3c; font-weight: bold;">Admin Login</a>
+    </p>
+  </main>
+
+  <script src="script.js"></script>
+  <!-- ...existing code... -->
+<script>
+document.getElementById('loginForm').addEventListener('submit', async function(e) {
+  e.preventDefault();
+  const empId = document.getElementById('empId').value;
+  const password = document.getElementById('password').value;
+  const errorMsg = document.getElementById('loginError');
+  errorMsg.textContent = '';
+
+  try {
+    const res = await fetch('/api/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ empId, password })
+    });
+    const data = await res.json();
+    if (res.ok) {
+      window.location.href = '/dashboard.html'; // Redirect on success
+    } else {
+      errorMsg.textContent = data.message || 'Login failed';
+    }
+  } catch (err) {
+    errorMsg.textContent = 'Server error. Please try again.';
+  }
+});
+</script>
+<!-- ...existing code... -->
+</body>
+</html>

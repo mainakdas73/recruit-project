@@ -1,0 +1,91 @@
+1. I have built the image with app image and source code.
+2. Now testing the app by running it locally
+
+docker run -d \
+  --name hr-app \
+  -p 3000:3000 \
+  -e MONGO_URL=mongodb://host.docker.internal:27017/testdb \
+  mainakdas73/hr-app:1.0
+
+Test the application :
+
+http://localhost:3000
+
+$ docker images
+                                                                                                             i Info →   U  In Use
+IMAGE                      ID             DISK USAGE   CONTENT SIZE   EXTRA
+mainakdas73/hr-app:1.0     fcbf9db79f14        210MB         51.8MB    U 
+mainakdas73/test-app:1.0   bd7cfec18327        221MB           52MB
+mongo:6.0                  03cda579c8ca       1.06GB          273MB    U 
+test-app:1.0               bd7cfec18327        221MB           52MB
+
+Mainak@Mainak MINGW64 /d/DevOps Training/Scripts and Docs/Recruitment-Project/Docker-build-test
+$ docker ps
+CONTAINER ID   IMAGE                    COMMAND                  CREATED              STATUS              PORTS                  
+                           NAMES
+6fec073e981c   mainakdas73/hr-app:1.0   "docker-entrypoint.s…"   About a minute ago   Up About a minute   0.0.0.0:3000->3000/tcp, [::]:3000->3000/tcp       hr-app
+59a285905017   mongo:6.0                "docker-entrypoint.s…"   2 minutes ago        Up 2 minutes        0.0.0.0:27017->27017/tcp, [::]:27017->27017/tcp   mongo
+
+3. Now my image is successfully running with environment variable. Next I will integrate mongo with the application and run with docker-compose.Before that I have to push the image to docker registry from where my new image will be puled by Docker compose.
+
+docker push mainakdas73/hr-app:1.0
+
+successfully pushed to Docker registry and this image now can be used with deployment in K8s.
+
+4. Now I will run docker compose to pull my customized image and mongo image (preset locally) and create 2 containers (mentioned in docker compose).
+
+ ✔ Container mongo  Created                                                                                                 0.5s 
+ ✔ Container hr-app Created   
+
+http://localhost:3000 (if shows the page then my containers are running perfectly)  <-- Tested locally
+
+**So now I can use the image in Kubectl deployment.
+
+==> Installing in K8s cluster 
+
+1. First apply/install mongo then nodejs app
+
+Now test if Application is getting mongo from inside the pod
+
+$ kubectl get pod -n docker-ns
+NAME                               READY   STATUS        RESTARTS      AGE
+mongo-744fb8b9df-vgwsc             1/1     Running       0             17m
+mongo-client                       1/1     Terminating   1 (14s ago)   2m18s
+recruitment-app-5cb9d68d97-d7xsn   1/1     Running       0             14m
+recruitment-app-5cb9d68d97-nbm49   1/1     Running       0             14m
+
+Mainak@Mainak MINGW64 /d/DevOps Training/Scripts and Docs/Recruitment-Project/Docker-build-test
+$ kubectl exec -it recruitment-app-5cb9d68d97-d7xsn -n docker-ns -- sh
+/app #
+/app # nslookup mongo
+Server:         10.0.0.10
+Address:        10.0.0.10:53
+
+Name:   mongo.docker-ns.svc.cluster.local
+Address: 10.0.27.197		<--- successful
+
+change service.yaml port -> LoadBalancer and apply
+
+$ kubectl apply -f app-service.yaml -n docker-ns
+service/recruitment-app-service configured
+
+Mainak@Mainak MINGW64 /d/DevOps Training/Scripts and Docs/Recruitment-Project/Docker-build-test
+$ kubectl get svc -n docker-ns
+NAME                      TYPE           CLUSTER-IP    EXTERNAL-IP   PORT(S)        AGE
+mongo                     ClusterIP      10.0.27.197   <none>        27017/TCP      19m
+recruitment-app-service   LoadBalancer   10.0.233.63   20.37.11.42   80:30080/TCP   17m
+
+Now the browser will successfully show the page.
+
+docker run -it --name mongo -v /opt/meesho:/e-commerce-app ubuntu /bin/bash
+
+Creates container mongo from image mongo:6.0 mounting local /d/test inside the container
+docker run -d \
+  --name mongo \
+  -p 27017:27017 \
+  -v /d/test:/data/db \
+  mongo:6.0
+
+Test mounted volume inside the container
+
+docker inspect mongo --format='{{ json .Mounts }}'

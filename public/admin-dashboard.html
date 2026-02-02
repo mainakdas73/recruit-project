@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>HR Admin Dashboard - HR System</title>
+  <link rel="stylesheet" href="style.css" />
+  <style>
+    .admin-stats {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 20px;
+      margin-bottom: 30px;
+    }
+    
+    .stat-card {
+      background: rgba(255, 255, 255, 0.15);
+      padding: 25px;
+      border-radius: 15px;
+      text-align: center;
+      color: #e8f0fe;
+      box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+    }
+    
+    .stat-number {
+      font-size: 2.5rem;
+      font-weight: bold;
+      color: #38a1db;
+      margin-bottom: 10px;
+    }
+    
+    .stat-label {
+      font-size: 1rem;
+      opacity: 0.9;
+    }
+    
+    .admin-sections {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 25px;
+      margin-top: 30px;
+    }
+    
+    .admin-section {
+      background: rgba(255, 255, 255, 0.1);
+      padding: 25px;
+      border-radius: 18px;
+      box-shadow: 0 8px 30px rgba(0, 0, 0, 0.2);
+    }
+    
+    .admin-section h3 {
+      color: #e8f0fe;
+      margin-bottom: 20px;
+      font-size: 1.3rem;
+    }
+    
+    .data-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 15px;
+      background: rgba(255, 255, 255, 0.9);
+      border-radius: 10px;
+      overflow: hidden;
+    }
+    
+    .data-table th, .data-table td {
+      padding: 12px;
+      text-align: left;
+      border-bottom: 1px solid #ddd;
+      color: #2c3e50;
+    }
+    
+    .data-table th {
+      background-color: #3498db;
+      color: white;
+      font-weight: bold;
+    }
+    
+    .status-pending { color: #f39c12; font-weight: bold; }
+    .status-approved { color: #27ae60; font-weight: bold; }
+    .status-rejected { color: #e74c3c; font-weight: bold; }
+    
+    .action-btn {
+      padding: 5px 10px;
+      margin: 2px;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 0.8rem;
+      font-weight: bold;
+    }
+    
+    .btn-approve { background: #27ae60; color: white; }
+    .btn-reject { background: #e74c3c; color: white; }
+    .btn-edit { background: #3498db; color: white; }
+    .btn-delete { background: #e67e22; color: white; }
+  </style>
+</head>
+<body>
+<header class="header">
+  <div class="container header-content">
+    <h1>HR Admin Dashboard</h1>
+    <nav>
+      <a href="admin-employees.html" class="nav-link">Employees</a>
+      <a href="admin-leaves.html" class="nav-link">Leave Management</a>
+      <a href="admin-attendance.html" class="nav-link">Attendance</a>
+      <a href="admin-grievances.html" class="nav-link">Grievances</a>
+      <button id="logoutBtn" class="btn-logout">Logout</button>
+    </nav>
+  </div>
+</header>
+
+<main class="container">
+  <section>
+    <h2>Dashboard Overview</h2>
+    <div class="admin-stats" id="adminStats">
+      <div class="stat-card">
+        <div class="stat-number" id="totalEmployees">-</div>
+        <div class="stat-label">Total Employees</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-number" id="pendingLeaves">-</div>
+        <div class="stat-label">Pending Leaves</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-number" id="openGrievances">-</div>
+        <div class="stat-label">Open Grievances</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-number" id="todayAttendance">-</div>
+        <div class="stat-label">Today's Attendance</div>
+      </div>
+    </div>
+  </section>
+
+  <div class="admin-sections">
+    <div class="admin-section">
+      <h3>Recent Leave Requests</h3>
+      <div id="recentLeaves">Loading...</div>
+    </div>
+    
+    <div class="admin-section">
+      <h3>Recent Grievances</h3>
+      <div id="recentGrievances">Loading...</div>
+    </div>
+    
+    <div class="admin-section">
+      <h3>Quick Actions</h3>
+      <div class="card-grid">
+        <button onclick="window.location.href='admin-employees.html'" class="card">Manage Employees</button>
+        <button onclick="window.location.href='admin-leaves.html'" class="card">Review Leaves</button>
+        <button onclick="window.location.href='admin-attendance.html'" class="card">Attendance Reports</button>
+        <button onclick="showJobPostingForm()" class="card">Post New Job</button>
+      </div>
+    </div>
+    
+    <div class="admin-section">
+      <h3>HR Analytics</h3>
+      <canvas id="analyticsChart" width="400" height="200"></canvas>
+    </div>
+  </div>
+</main>
+
+<!-- Job Posting Modal -->
+<div id="jobModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000;">
+  <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: white; padding: 30px; border-radius: 15px; width: 80%; max-width: 500px;">
+    <h3 style="color: #2c3e50; margin-bottom: 20px;">Post New Job</h3>
+    <form id="jobPostingForm">
+      <label for="jobTitle">Job Title:</label>
+      <input type="text" id="jobTitle" name="title" required />
+      
+      <label for="jobDescription">Description:</label>
+      <textarea id="jobDescription" name="description" rows="3" required></textarea>
+      
+      <label for="jobRequirements">Requirements:</label>
+      <textarea id="jobRequirements" name="requirements" rows="3" required></textarea>
+      
+      <label for="jobLocation">Location:</label>
+      <input type="text" id="jobLocation" name="location" required />
+      
+      <label for="jobSalary">Salary Range:</label>
+      <input type="text" id="jobSalary" name="salary" required />
+      
+      <div style="margin-top: 20px;">
+        <button type="submit" class="btn-primary">Post Job</button>
+        <button type="button" onclick="closeJobModal()" class="btn-secondary">Cancel</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+// Check admin authentication
+function checkAdminAuth() {
+  const adminId = sessionStorage.getItem('adminId');
+  if (!adminId) {
+    window.location.href = 'admin-login.html';
+    return false;
+  }
+  return true;
+}
+
+// Load dashboard data
+async function loadDashboard() {
+  if (!checkAdminAuth()) return;
+  
+  try {
+    // Load analytics
+    const analyticsRes = await fetch('/api/admin/analytics');
+    const analytics = await analyticsRes.json();
+    
+    if (analyticsRes.ok) {
+      document.getElementById('totalEmployees').textContent = analytics.totalEmployees;
+      document.getElementById('pendingLeaves').textContent = analytics.pendingLeaves;
+      document.getElementById('openGrievances').textContent = analytics.openGrievances;
+      document.getElementById('todayAttendance').textContent = analytics.todayAttendance;
+    }
+    
+    // Load recent leaves
+    const leavesRes = await fetch('/api/admin/leaves');
+    const leaves = await leavesRes.json();
+    
+    if (leavesRes.ok) {
+      displayRecentLeaves(leaves.slice(0, 5));
+    }
+    
+    // Load recent grievances
+    const grievancesRes = await fetch('/api/admin/grievances');
+    const grievances = await grievancesRes.json();
+    
+    if (grievancesRes.ok) {
+      displayRecentGrievances(grievances.slice(0, 5));
+    }
+    
+  } catch (error) {
+    console.error('Error loading dashboard:', error);
+  }
+}
+
+function displayRecentLeaves(leaves) {
+  const container = document.getElementById('recentLeaves');
+  if (leaves.length === 0) {
+    container.innerHTML = '<p>No recent leave requests</p>';
+    return;
+  }
+  
+  let html = '<table class="data-table"><tr><th>Employee</th><th>Dates</th><th>Status</th><th>Actions</th></tr>';
+  leaves.forEach(leave => {
+    html += `<tr>
+      <td>${leave.empId}</td>
+      <td>${leave.startDate} to ${leave.endDate}</td>
+      <td class="status-${leave.status.toLowerCase()}">${leave.status}</td>
+      <td>
+        ${leave.status === 'Pending' ? 
+          `<button class="action-btn btn-approve" onclick="updateLeaveStatus('${leave._id}', 'Approved')">Approve</button>
+           <button class="action-btn btn-reject" onclick="updateLeaveStatus('${leave._id}', 'Rejected')">Reject</button>` : 
+          'No action needed'}
+      </td>
+    </tr>`;
+  });
+  html += '</table>';
+  container.innerHTML = html;
+}
+
+function displayRecentGrievances(grievances) {
+  const container = document.getElementById('recentGrievances');
+  if (grievances.length === 0) {
+    container.innerHTML = '<p>No recent grievances</p>';
+    return;
+  }
+  
+  let html = '<table class="data-table"><tr><th>Employee</th><th>Date</th><th>Status</th><th>Actions</th></tr>';
+  grievances.forEach(grievance => {
+    html += `<tr>
+      <td>${grievance.empId}</td>
+      <td>${new Date(grievance.submittedAt).toLocaleDateString()}</td>
+      <td>${grievance.status || 'New'}</td>
+      <td><button class="action-btn btn-edit" onclick="reviewGrievance('${grievance._id}')">Review</button></td>
+    </tr>`;
+  });
+  html += '</table>';
+  container.innerHTML = html;
+}
+
+async function updateLeaveStatus(leaveId, status) {
+  try {
+    const response = await fetch(`/api/admin/leaves/${leaveId}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ status })
+    });
+    
+    if (response.ok) {
+      alert(`Leave request ${status.toLowerCase()} successfully!`);
+      loadDashboard(); // Refresh data
+    } else {
+      alert('Failed to update leave request');
+    }
+  } catch (error) {
+    alert('Error updating leave request');
+  }
+}
+
+function reviewGrievance(grievanceId) {
+  window.location.href = `admin-grievances.html#${grievanceId}`;
+}
+
+function showJobPostingForm() {
+  document.getElementById('jobModal').style.display = 'block';
+}
+
+function closeJobModal() {
+  document.getElementById('jobModal').style.display = 'none';
+}
+
+// Job posting form handler
+document.getElementById('jobPostingForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  
+  const formData = new FormData(e.target);
+  const jobData = Object.fromEntries(formData);
+  
+  try {
+    const response = await fetch('/api/admin/jobs', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(jobData)
+    });
+    
+    if (response.ok) {
+      alert('Job posted successfully!');
+      closeJobModal();
+      e.target.reset();
+    } else {
+      alert('Failed to post job');
+    }
+  } catch (error) {
+    alert('Error posting job');
+  }
+});
+
+// Logout function
+document.getElementById('logoutBtn').onclick = function() {
+  sessionStorage.removeItem('adminId');
+  window.location.href = 'admin-login.html';
+};
+
+// Load dashboard on page load
+document.addEventListener('DOMContentLoaded', loadDashboard);
+</script>
+</body>
+</html>

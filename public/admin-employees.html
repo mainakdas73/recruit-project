@@ -1,0 +1,425 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Employee Management - HR Admin</title>
+  <link rel="stylesheet" href="style.css" />
+  <style>
+    .search-bar {
+      margin-bottom: 20px;
+      display: flex;
+      gap: 15px;
+      align-items: center;
+    }
+    
+    .search-bar input {
+      flex: 1;
+      margin: 0;
+    }
+    
+    .employee-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 15px;
+      background: rgba(255, 255, 255, 0.9);
+      border-radius: 10px;
+      overflow: hidden;
+    }
+    
+    .employee-table th, .employee-table td {
+      padding: 12px;
+      text-align: left;
+      border-bottom: 1px solid #ddd;
+      color: #2c3e50;
+    }
+    
+    .employee-table th {
+      background-color: #3498db;
+      color: white;
+      font-weight: bold;
+    }
+    
+    .action-buttons {
+      display: flex;
+      gap: 5px;
+    }
+    
+    .btn-small {
+      padding: 5px 10px;
+      font-size: 0.8rem;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-weight: bold;
+    }
+    
+    .btn-edit { background: #3498db; color: white; }
+    .btn-delete { background: #e74c3c; color: white; }
+    
+    .modal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0,0,0,0.5);
+      z-index: 1000;
+    }
+    
+    .modal-content {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: white;
+      padding: 30px;
+      border-radius: 15px;
+      width: 80%;
+      max-width: 500px;
+      max-height: 80vh;
+      overflow-y: auto;
+    }
+    
+    .modal h3 {
+      color: #2c3e50;
+      margin-bottom: 20px;
+    }
+    
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+      gap: 15px;
+      margin-bottom: 30px;
+    }
+    
+    .stat-item {
+      background: rgba(255, 255, 255, 0.15);
+      padding: 20px;
+      border-radius: 15px;
+      text-align: center;
+      color: #e8f0fe;
+    }
+    
+    .stat-number {
+      font-size: 2rem;
+      font-weight: bold;
+      color: #38a1db;
+    }
+    
+    .stat-label {
+      font-size: 0.9rem;
+      opacity: 0.9;
+    }
+  </style>
+</head>
+<body>
+<header class="header">
+  <div class="container header-content">
+    <h1>Employee Management</h1>
+    <nav>
+      <a href="admin-dashboard.html" class="nav-link">Dashboard</a>
+      <a href="admin-leaves.html" class="nav-link">Leaves</a>
+      <a href="admin-attendance.html" class="nav-link">Attendance</a>
+      <button id="logoutBtn" class="btn-logout">Logout</button>
+    </nav>
+  </div>
+</header>
+
+<main class="container">
+  <section>
+    <h2>Employee Statistics</h2>
+    <div class="stats-grid" id="employeeStats">
+      <div class="stat-item">
+        <div class="stat-number" id="totalEmployees">-</div>
+        <div class="stat-label">Total Employees</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-number" id="activeEmployees">-</div>
+        <div class="stat-label">Active</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-number" id="newEmployees">-</div>
+        <div class="stat-label">New This Month</div>
+      </div>
+    </div>
+  </section>
+
+  <section style="background: rgba(255, 255, 255, 0.1); padding: 25px; border-radius: 18px;">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+      <h3 style="color: #e8f0fe;">Employee Directory</h3>
+      <button onclick="showAddEmployeeModal()" class="btn-primary">Add New Employee</button>
+    </div>
+    
+    <div class="search-bar">
+      <input type="text" id="searchInput" placeholder="Search employees..." />
+      <button onclick="searchEmployees()" class="btn-secondary">Search</button>
+      <button onclick="loadEmployees()" class="btn-secondary">Show All</button>
+    </div>
+    
+    <div id="employeeTableContainer">
+      Loading employees...
+    </div>
+  </section>
+</main>
+
+<!-- Add/Edit Employee Modal -->
+<div id="employeeModal" class="modal">
+  <div class="modal-content">
+    <h3 id="modalTitle">Add New Employee</h3>
+    <form id="employeeForm">
+      <input type="hidden" id="employeeId" />
+      
+      <label for="empFullName">Full Name:</label>
+      <input type="text" id="empFullName" name="fullName" required />
+      
+      <label for="empId">Employee ID:</label>
+      <input type="text" id="empId" name="empId" required />
+      
+      <label for="empEmail">Email:</label>
+      <input type="email" id="empEmail" name="email" required />
+      
+      <label for="empDepartment">Department:</label>
+      <input type="text" id="empDepartment" name="department" placeholder="e.g., IT, HR, Finance" />
+      
+      <label for="empPosition">Position:</label>
+      <input type="text" id="empPosition" name="position" placeholder="e.g., Software Engineer" />
+      
+      <label for="empJoinDate">Join Date:</label>
+      <input type="date" id="empJoinDate" name="joinDate" />
+      
+      <div style="margin-top: 20px;">
+        <button type="submit" class="btn-primary">Save Employee</button>
+        <button type="button" onclick="closeEmployeeModal()" class="btn-secondary">Cancel</button>
+      </div>
+      
+      <p id="employeeFormError" class="error-msg"></p>
+    </form>
+  </div>
+</div>
+
+<script>
+let employees = [];
+
+// Check admin authentication
+function checkAdminAuth() {
+  const adminId = sessionStorage.getItem('adminId');
+  if (!adminId) {
+    window.location.href = 'admin-login.html';
+    return false;
+  }
+  return true;
+}
+
+// Load all employees
+async function loadEmployees() {
+  if (!checkAdminAuth()) return;
+  
+  try {
+    const response = await fetch('/api/admin/employees');
+    const data = await response.json();
+    
+    if (response.ok) {
+      employees = data;
+      displayEmployees(employees);
+      updateStats(employees);
+    } else {
+      document.getElementById('employeeTableContainer').innerHTML = 
+        '<p style="color: #e74c3c;">Error loading employees: ' + (data.message || 'Unknown error') + '</p>';
+    }
+  } catch (error) {
+    document.getElementById('employeeTableContainer').innerHTML = 
+      '<p style="color: #e74c3c;">Network error. Please try again.</p>';
+  }
+}
+
+function displayEmployees(employeeList) {
+  const container = document.getElementById('employeeTableContainer');
+  
+  if (employeeList.length === 0) {
+    container.innerHTML = '<p>No employees found.</p>';
+    return;
+  }
+  
+  let html = `
+    <table class="employee-table">
+      <tr>
+        <th>Employee ID</th>
+        <th>Full Name</th>
+        <th>Email</th>
+        <th>Department</th>
+        <th>Position</th>
+        <th>Join Date</th>
+        <th>Actions</th>
+      </tr>
+  `;
+  
+  employeeList.forEach(emp => {
+    html += `
+      <tr>
+        <td>${emp.empId}</td>
+        <td>${emp.fullName}</td>
+        <td>${emp.email}</td>
+        <td>${emp.department || 'Not specified'}</td>
+        <td>${emp.position || 'Not specified'}</td>
+        <td>${emp.joinDate ? new Date(emp.joinDate).toLocaleDateString() : 'Not specified'}</td>
+        <td>
+          <div class="action-buttons">
+            <button class="btn-small btn-edit" onclick="editEmployee('${emp._id}')">Edit</button>
+            <button class="btn-small btn-delete" onclick="deleteEmployee('${emp._id}', '${emp.fullName}')">Delete</button>
+          </div>
+        </td>
+      </tr>
+    `;
+  });
+  
+  html += '</table>';
+  container.innerHTML = html;
+}
+
+function updateStats(employeeList) {
+  document.getElementById('totalEmployees').textContent = employeeList.length;
+  document.getElementById('activeEmployees').textContent = employeeList.length; // Simplified
+  
+  // Count new employees this month (simplified)
+  const thisMonth = new Date().getMonth();
+  const thisYear = new Date().getFullYear();
+  const newThisMonth = employeeList.filter(emp => {
+    if (!emp.joinDate) return false;
+    const joinDate = new Date(emp.joinDate);
+    return joinDate.getMonth() === thisMonth && joinDate.getFullYear() === thisYear;
+  }).length;
+  
+  document.getElementById('newEmployees').textContent = newThisMonth;
+}
+
+function searchEmployees() {
+  const query = document.getElementById('searchInput').value.toLowerCase();
+  if (!query) {
+    displayEmployees(employees);
+    return;
+  }
+  
+  const filtered = employees.filter(emp => 
+    emp.fullName.toLowerCase().includes(query) ||
+    emp.empId.toLowerCase().includes(query) ||
+    emp.email.toLowerCase().includes(query) ||
+    (emp.department && emp.department.toLowerCase().includes(query)) ||
+    (emp.position && emp.position.toLowerCase().includes(query))
+  );
+  
+  displayEmployees(filtered);
+}
+
+function showAddEmployeeModal() {
+  document.getElementById('modalTitle').textContent = 'Add New Employee';
+  document.getElementById('employeeForm').reset();
+  document.getElementById('employeeId').value = '';
+  document.getElementById('employeeModal').style.display = 'block';
+}
+
+function editEmployee(employeeId) {
+  const employee = employees.find(emp => emp._id === employeeId);
+  if (!employee) return;
+  
+  document.getElementById('modalTitle').textContent = 'Edit Employee';
+  document.getElementById('employeeId').value = employeeId;
+  document.getElementById('empFullName').value = employee.fullName;
+  document.getElementById('empId').value = employee.empId;
+  document.getElementById('empEmail').value = employee.email;
+  document.getElementById('empDepartment').value = employee.department || '';
+  document.getElementById('empPosition').value = employee.position || '';
+  document.getElementById('empJoinDate').value = employee.joinDate ? employee.joinDate.split('T')[0] : '';
+  
+  document.getElementById('employeeModal').style.display = 'block';
+}
+
+function closeEmployeeModal() {
+  document.getElementById('employeeModal').style.display = 'none';
+  document.getElementById('employeeFormError').textContent = '';
+}
+
+async function deleteEmployee(employeeId, employeeName) {
+  if (!confirm(`Are you sure you want to delete employee "${employeeName}"? This action cannot be undone.`)) {
+    return;
+  }
+  
+  try {
+    const response = await fetch(`/api/admin/employees/${employeeId}`, {
+      method: 'DELETE'
+    });
+    
+    if (response.ok) {
+      alert('Employee deleted successfully!');
+      loadEmployees(); // Reload the list
+    } else {
+      const data = await response.json();
+      alert('Failed to delete employee: ' + (data.message || 'Unknown error'));
+    }
+  } catch (error) {
+    alert('Network error. Please try again.');
+  }
+}
+
+// Employee form submission
+document.getElementById('employeeForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  
+  const formData = new FormData(e.target);
+  const employeeData = Object.fromEntries(formData);
+  const employeeId = document.getElementById('employeeId').value;
+  const errorElement = document.getElementById('employeeFormError');
+  
+  errorElement.textContent = '';
+  
+  try {
+    const url = employeeId ? 
+      `/api/admin/employees/${employeeId}` : 
+      '/api/signup'; // Use existing signup endpoint for new employees
+    
+    const method = employeeId ? 'PUT' : 'POST';
+    
+    // For new employees, add a default password
+    if (!employeeId) {
+      employeeData.password = 'defaultPassword123'; // Should be changed by employee on first login
+    }
+    
+    const response = await fetch(url, {
+      method: method,
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(employeeData)
+    });
+    
+    const data = await response.json();
+    
+    if (response.ok) {
+      alert(employeeId ? 'Employee updated successfully!' : 'Employee added successfully!');
+      closeEmployeeModal();
+      loadEmployees();
+    } else {
+      errorElement.textContent = data.message || 'Operation failed';
+    }
+  } catch (error) {
+    errorElement.textContent = 'Network error. Please try again.';
+  }
+});
+
+// Search on Enter key
+document.getElementById('searchInput').addEventListener('keypress', (e) => {
+  if (e.key === 'Enter') {
+    searchEmployees();
+  }
+});
+
+// Logout function
+document.getElementById('logoutBtn').onclick = function() {
+  sessionStorage.removeItem('adminId');
+  window.location.href = 'admin-login.html';
+};
+
+// Load employees on page load
+document.addEventListener('DOMContentLoaded', loadEmployees);
+</script>
+</body>
+</html>

@@ -1,0 +1,10 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: mongo-config
+  namespace: docker-ns
+data:
+  MONGO_HOST: mongo
+  MONGO_PORT: "27017"
+  MONGO_DB: hr_system
+

@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Hiring Process Feedback - HR System</title>
+<link rel="stylesheet" href="style.css" />
+</head>
+<body>
+<header class="header">
+  <div class="container header-content">
+    <h1>Hiring Process Feedback</h1>
+    <nav>
+      <a href="dashboard.html" class="nav-link">Dashboard</a>
+      <button id="logoutBtn" class="btn-logout">Logout</button>
+    </nav>
+  </div>
+</header>
+
+<main class="container glass-card">
+  <p>Use the input below to provide feedback (simulating Whisper AI voice feedback):</p>
+  <textarea id="hiringFeedback" rows="5" placeholder="Type or speak your feedback here..."></textarea>
+  <button id="submitFeedbackBtn" class="btn-primary">Submit Feedback</button>
+  <p id="feedbackStatus"></p>
+</main>
+
+<script src="script.js"></script>
+<!-- Only the script part is shown for brevity -->
+<script>
+if (document.getElementById('submitFeedbackBtn')) {
+  document.getElementById('submitFeedbackBtn').addEventListener('click', async () => {
+    const feedback = document.getElementById('hiringFeedback').value.trim();
+    const status = document.getElementById('feedbackStatus');
+    status.textContent = '';
+    status.style.color = '';
+
+    if (!feedback) {
+      status.textContent = 'Please enter your feedback before submitting.';
+      status.style.color = '';
+      return;
+    }
+
+    // Get empId from sessionStorage
+    const empId = sessionStorage.getItem('empId');
+
+    try {
+      const res = await fetch('/api/hiring/feedback', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ empId, feedback })
+      });
+      const data = await res.json();
+      if (res.ok) {
+        status.textContent = 'Feedback submitted. Thank you!';
+        status.style.color = 'green';
+        document.getElementById('hiringFeedback').value = '';
+      } else {
+        status.textContent = data.message || 'Failed to submit feedback.';
+        status.style.color = '';
+      }
+    } catch {
+      status.textContent = 'Server error. Please try again.';
+      status.style.color = '';
+    }
+  });
+}
+</script>
+</body>
+</html>

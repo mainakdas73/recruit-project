@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Leave Balance - HR System</title>
+<link rel="stylesheet" href="style.css" />
+<style>
+.leave-balance-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 25px;
+  margin-top: 30px;
+}
+
+.balance-card {
+  background: rgba(255, 255, 255, 0.15);
+  padding: 25px;
+  border-radius: 18px;
+  text-align: center;
+  color: #e8f0fe;
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+}
+
+.balance-type {
+  font-size: 1.2rem;
+  font-weight: bold;
+  margin-bottom: 15px;
+  color: #38a1db;
+}
+
+.balance-numbers {
+  display: flex;
+  justify-content: space-between;
+  margin: 10px 0;
+}
+
+.balance-item {
+  text-align: center;
+}
+
+.balance-value {
+  font-size: 1.8rem;
+  font-weight: bold;
+  color: #27ae60;
+}
+
+.balance-label {
+  font-size: 0.9rem;
+  opacity: 0.8;
+}
+
+.leave-history {
+  margin-top: 40px;
+  background: rgba(255, 255, 255, 0.1);
+  padding: 25px;
+  border-radius: 18px;
+}
+
+.history-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 15px;
+  background: rgba(255, 255, 255, 0.9);
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.history-table th, .history-table td {
+  padding: 12px;
+  text-align: left;
+  border-bottom: 1px solid #ddd;
+  color: #2c3e50;
+}
+
+.history-table th {
+  background-color: #3498db;
+  color: white;
+  font-weight: bold;
+}
+
+.status-approved { color: #27ae60; font-weight: bold; }
+.status-pending { color: #f39c12; font-weight: bold; }
+.status-rejected { color: #e74c3c; font-weight: bold; }
+</style>
+</head>
+<body>
+<header class="header">
+  <div class="container header-content">
+    <h1>Leave Balance</h1>
+    <nav>
+      <a href="dashboard.html" class="nav-link">Dashboard</a>
+      <a href="apply_leave.html" class="nav-link">Apply Leave</a>
+      <button id="logoutBtn" class="btn-logout">Logout</button>
+    </nav>
+  </div>
+</header>
+
+<main class="container">
+  <section>
+    <h2>Your Leave Balance</h2>
+    <div class="leave-balance-grid" id="leaveBalanceDisplay">
+      Loading...
+    </div>
+  </section>
+  
+  <section class="leave-history">
+    <h3>Leave History</h3>
+    <div id="leaveHistoryDisplay">
+      Loading...
+    </div>
+  </section>
+</main>
+
+<script>
+// Check authentication
+function checkAuth() {
+  const empId = sessionStorage.getItem('empId');
+  if (!empId) {
+    window.location.href = 'login.html';
+    return false;
+  }
+  return empId;
+}
+
+// Load leave balance and history
+async function loadLeaveData() {
+  const empId = checkAuth();
+  if (!empId) return;
+  
+  try {
+    // Load leave balance
+    const balanceRes = await fetch(`/api/leave/balance/${empId}`);
+    const balanceData = await balanceRes.json();
+    
+    if (balanceRes.ok) {
+      displayLeaveBalance(balanceData);
+    } else {
+      document.getElementById('leaveBalanceDisplay').innerHTML = '<p>Error loading leave balance</p>';
+    }
+    
+    // Load leave history
+    const historyRes = await fetch(`/api/leave/history/${empId}`);
+    const historyData = await historyRes.json();
+    
+    if (historyRes.ok) {
+      displayLeaveHistory(historyData);
+    } else {
+      document.getElementById('leaveHistoryDisplay').innerHTML = '<p>Error loading leave history</p>';
+    }
+    
+  } catch (error) {
+    document.getElementById('leaveBalanceDisplay').innerHTML = '<p>Server error. Please try again.</p>';
+    document.getElementById('leaveHistoryDisplay').innerHTML = '<p>Server error. Please try again.</p>';
+  }
+}
+
+function displayLeaveBalance(data) {
+  const container = document.getElementById('leaveBalanceDisplay');
+  
+  container.innerHTML = `
+    <div class="balance-card">
+      <div class="balance-type">Casual Leave</div>
+      <div class="balance-numbers">
+        <div class="balance-item">
+          <div class="balance-value">${data.casualLeave.total}</div>
+          <div class="balance-label">Total</div>
+        </div>
+        <div class="balance-item">
+          <div class="balance-value">${data.casualLeave.used}</div>
+          <div class="balance-label">Used</div>
+        </div>
+        <div class="balance-item">
+          <div class="balance-value">${data.casualLeave.remaining}</div>
+          <div class="balance-label">Remaining</div>
+        </div>
+      </div>
+    </div>
+    
+    <div class="balance-card">
+      <div class="balance-type">Sick Leave</div>
+      <div class="balance-numbers">
+        <div class="balance-item">
+          <div class="balance-value">${data.sickLeave.total}</div>
+          <div class="balance-label">Total</div>
+        </div>
+        <div class="balance-item">
+          <div class="balance-value">${data.sickLeave.used}</div>
+          <div class="balance-label">Used</div>
+        </div>
+        <div class="balance-item">
+          <div class="balance-value">${data.sickLeave.remaining}</div>
+          <div class="balance-label">Remaining</div>
+        </div>
+      </div>
+    </div>
+    
+    <div class="balance-card">
+      <div class="balance-type">Privilege Leave</div>
+      <div class="balance-numbers">
+        <div class="balance-item">
+          <div class="balance-value">${data.privilegeLeave.total}</div>
+          <div class="balance-label">Total</div>
+        </div>
+        <div class="balance-item">
+          <div class="balance-value">${data.privilegeLeave.used}</div>
+          <div class="balance-label">Used</div>
+        </div>
+        <div class="balance-item">
+          <div class="balance-value">${data.privilegeLeave.remaining}</div>
+          <div class="balance-label">Remaining</div>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+function displayLeaveHistory(leaves) {
+  const container = document.getElementById('leaveHistoryDisplay');
+  
+  if (leaves.length === 0) {
+    container.innerHTML = '<p>No leave history found.</p>';
+    return;
+  }
+  
+  let html = `
+    <table class="history-table">
+      <tr>
+        <th>From</th>
+        <th>To</th>
+        <th>Reason</th>
+        <th>Status</th>
+        <th>Applied Date</th>
+      </tr>
+  `;
+  
+  leaves.forEach(leave => {
+    html += `
+      <tr>
+        <td>${leave.startDate}</td>
+        <td>${leave.endDate}</td>
+        <td>${leave.leaveReason}</td>
+        <td class="status-${leave.status.toLowerCase()}">${leave.status}</td>
+        <td>${new Date(leave.appliedAt).toLocaleDateString()}</td>
+      </tr>
+    `;
+  });
+  
+  html += '</table>';
+  container.innerHTML = html;
+}
+
+// Logout function
+document.getElementById('logoutBtn').onclick = function() {
+  sessionStorage.removeItem('empId');
+  window.location.href = 'login.html';
+};
+
+// Load data on page load
+document.addEventListener('DOMContentLoaded', loadLeaveData);
+</script>
+</body>
+</html>

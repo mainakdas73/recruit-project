@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Submit Grievance - HR System</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+<header class="header">
+  <div class="container header-content">
+    <h1>Submit a Grievance</h1>
+    <nav>
+      <a href="dashboard.html" class="nav-link">Dashboard</a>
+      <button id="logoutBtn" class="btn-logout">Logout</button>
+    </nav>
+  </div>
+</header>
+
+<main class="container glass-card">
+  <form id="grievanceForm">
+    <label for="grievanceText">Your Grievance</label>
+    <textarea id="grievanceText" name="grievanceText" rows="5" placeholder="Describe your grievance..." required></textarea>
+    <button type="submit" class="btn-primary">Submit Grievance</button>
+    <p id="grievanceStatus" class="error-msg"></p>
+  </form>
+</main>
+
+<script>
+if (document.getElementById('logoutBtn')) {
+  document.getElementById('logoutBtn').onclick = function() {
+    sessionStorage.removeItem('empId');
+    window.location.href = 'login.html';
+  };
+}
+
+if (document.getElementById('grievanceForm')) {
+  document.getElementById('grievanceForm').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    const grievanceText = document.getElementById('grievanceText').value.trim();
+    const status = document.getElementById('grievanceStatus');
+    status.textContent = '';
+    status.style.color = '';
+
+    if (!grievanceText) {
+      status.textContent = 'Please enter your grievance before submitting.';
+      return;
+    }
+
+    const empId = sessionStorage.getItem('empId');
+
+    try {
+      const res = await fetch('/api/grievance', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ empId, grievanceText })
+      });
+      const data = await res.json();
+      if (res.ok) {
+        status.textContent = 'Grievance submitted. Thank you!';
+        status.style.color = 'green';
+        document.getElementById('grievanceForm').reset();
+      } else {
+        status.textContent = data.message || 'Failed to submit grievance.';
+      }
+    } catch {
+      status.textContent = 'Server error. Please try again.';
+    }
+  });
+}
+</script>
+</body>
+</html>

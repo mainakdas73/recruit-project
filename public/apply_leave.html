@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Apply Leave - HR System</title>
+<link rel="stylesheet" href="style.css" />
+</head>
+<body>
+<header class="header">
+  <div class="container header-content">
+    <h1>Apply for Leave</h1>
+    <nav>
+      <a href="dashboard.html" class="nav-link">Dashboard</a>
+      <button id="logoutBtn" class="btn-logout">Logout</button>
+    </nav>
+  </div>
+</header>
+
+<main class="container glass-card">
+  <form id="leaveForm">
+    <label for="startDate">Start Date</label>
+    <input type="date" id="startDate" name="startDate" required />
+
+    <label for="endDate">End Date</label>
+    <input type="date" id="endDate" name="endDate" required />
+
+    <label for="leaveReason">Reason for Leave</label>
+    <textarea id="leaveReason" name="leaveReason" rows="4" placeholder="Explain your reason..." required></textarea>
+
+    <button type="submit" class="btn-primary">Submit Leave Request</button>
+    <p id="leaveError" class="error-msg"></p>
+  </form>
+</main>
+
+<script src="script.js"></script>
+<!-- Only the script part is shown for brevity -->
+<script>
+if (document.getElementById('leaveForm')) {
+  document.getElementById('leaveForm').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    const startDate = document.getElementById('startDate').value;
+    const endDate = document.getElementById('endDate').value;
+    const leaveReason = document.getElementById('leaveReason').value;
+    const leaveError = document.getElementById('leaveError');
+    leaveError.textContent = '';
+
+    if (new Date(endDate) < new Date(startDate)) {
+      leaveError.textContent = 'End date cannot be before start date.';
+      return;
+    }
+
+    // Get empId from sessionStorage
+    const empId = sessionStorage.getItem('empId');
+
+    try {
+      const res = await fetch('/api/leave/apply', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ empId, startDate, endDate, leaveReason })
+      });
+      const data = await res.json();
+      if (res.ok) {
+        leaveError.style.color = 'green';
+        leaveError.textContent = 'Leave request submitted!';
+        document.getElementById('leaveForm').reset();
+      } else {
+        leaveError.style.color = '';
+        leaveError.textContent = data.message || 'Failed to submit leave request.';
+      }
+    } catch {
+      leaveError.style.color = '';
+      leaveError.textContent = 'Server error. Please try again.';
+    }
+  });
+}
+</script>
+</body>
+</html>

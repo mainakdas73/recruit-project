@@ -1,0 +1,476 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Attendance Management - HR Admin</title>
+  <link rel="stylesheet" href="style.css" />
+  <style>
+    .filter-bar {
+      margin-bottom: 20px;
+      display: flex;
+      gap: 15px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+    
+    .filter-bar select, .filter-bar input {
+      margin: 0;
+      min-width: 150px;
+    }
+    
+    .attendance-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 15px;
+      background: rgba(255, 255, 255, 0.9);
+      border-radius: 10px;
+      overflow: hidden;
+    }
+    
+    .attendance-table th, .attendance-table td {
+      padding: 12px;
+      text-align: left;
+      border-bottom: 1px solid #ddd;
+      color: #2c3e50;
+    }
+    
+    .attendance-table th {
+      background-color: #3498db;
+      color: white;
+      font-weight: bold;
+    }
+    
+    .status-present { color: #27ae60; font-weight: bold; }
+    .status-absent { color: #e74c3c; font-weight: bold; }
+    .status-late { color: #f39c12; font-weight: bold; }
+    
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+      gap: 15px;
+      margin-bottom: 30px;
+    }
+    
+    .stat-item {
+      background: rgba(255, 255, 255, 0.15);
+      padding: 20px;
+      border-radius: 15px;
+      text-align: center;
+      color: #e8f0fe;
+    }
+    
+    .stat-number {
+      font-size: 2rem;
+      font-weight: bold;
+      color: #38a1db;
+    }
+    
+    .stat-label {
+      font-size: 0.9rem;
+      opacity: 0.9;
+    }
+    
+    .report-section {
+      background: rgba(255, 255, 255, 0.1);
+      padding: 25px;
+      border-radius: 18px;
+      margin-top: 20px;
+    }
+    
+    .chart-container {
+      background: rgba(255, 255, 255, 0.9);
+      padding: 20px;
+      border-radius: 15px;
+      margin-top: 15px;
+      height: 400px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    
+    .time-badge {
+      padding: 4px 8px;
+      border-radius: 4px;
+      font-size: 0.8rem;
+      font-weight: bold;
+    }
+    
+    .time-normal { background: #d4edda; color: #155724; }
+    .time-late { background: #f8d7da; color: #721c24; }
+    .time-early { background: #d1ecf1; color: #0c5460; }
+  </style>
+</head>
+<body>
+<header class="header">
+  <div class="container header-content">
+    <h1>Attendance Management</h1>
+    <nav>
+      <a href="admin-dashboard.html" class="nav-link">Dashboard</a>
+      <a href="admin-employees.html" class="nav-link">Employees</a>
+      <a href="admin-leaves.html" class="nav-link">Leaves</a>
+      <a href="admin-grievances.html" class="nav-link">Grievances</a>
+      <button id="logoutBtn" class="btn-logout">Logout</button>
+    </nav>
+  </div>
+</header>
+
+<main class="container">
+  <section>
+    <h2>Attendance Statistics</h2>
+    <div class="stats-grid" id="attendanceStats">
+      <div class="stat-item">
+        <div class="stat-number" id="todayPresent">-</div>
+        <div class="stat-label">Present Today</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-number" id="todayAbsent">-</div>
+        <div class="stat-label">Absent Today</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-number" id="todayLate">-</div>
+        <div class="stat-label">Late Today</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-number" id="totalEmployees">-</div>
+        <div class="stat-label">Total Employees</div>
+      </div>
+    </div>
+  </section>
+
+  <section style="background: rgba(255, 255, 255, 0.1); padding: 25px; border-radius: 18px;">
+    <h3 style="color: #e8f0fe; margin-bottom: 20px;">Attendance Records</h3>
+    
+    <div class="filter-bar">
+      <input type="text" id="employeeFilter" placeholder="Filter by Employee ID..." />
+      
+      <input type="date" id="dateFromFilter" />
+      <input type="date" id="dateToFilter" />
+      
+      <select id="statusFilter">
+        <option value="">All Status</option>
+        <option value="Present">Present</option>
+        <option value="Absent">Absent</option>
+        <option value="Late">Late</option>
+      </select>
+      
+      <button onclick="applyFilters()" class="btn-secondary">Apply Filters</button>
+      <button onclick="clearFilters()" class="btn-secondary">Clear</button>
+      <button onclick="exportReport()" class="btn-primary">Export Report</button>
+    </div>
+    
+    <div id="attendanceTableContainer">
+      Loading attendance records...
+    </div>
+  </section>
+
+  <section class="report-section">
+    <h3 style="color: #e8f0fe; margin-bottom: 20px;">Attendance Analytics</h3>
+    
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+      <div>
+        <h4 style="color: #e8f0fe; margin-bottom: 15px;">Weekly Attendance Trend</h4>
+        <div class="chart-container" id="weeklyChart">
+          <p style="color: #666;">Weekly attendance chart will be displayed here</p>
+        </div>
+      </div>
+      
+      <div>
+        <h4 style="color: #e8f0fe; margin-bottom: 15px;">Department Wise Attendance</h4>
+        <div class="chart-container" id="departmentChart">
+          <p style="color: #666;">Department wise attendance chart will be displayed here</p>
+        </div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<script>
+let allAttendance = [];
+let allEmployees = [];
+
+// Check admin authentication
+function checkAdminAuth() {
+  const adminId = sessionStorage.getItem('adminId');
+  if (!adminId) {
+    window.location.href = 'admin-login.html';
+    return false;
+  }
+  return true;
+}
+
+// Load attendance data
+async function loadAttendanceData() {
+  if (!checkAdminAuth()) return;
+  
+  try {
+    // Load employees first
+    const empResponse = await fetch('/api/admin/employees');
+    if (empResponse.ok) {
+      allEmployees = await empResponse.json();
+    }
+    
+    // Load attendance records
+    const response = await fetch('/api/admin/attendance');
+    const data = await response.json();
+    
+    if (response.ok) {
+      allAttendance = data;
+      displayAttendanceRecords(allAttendance);
+      updateAttendanceStats(allAttendance, allEmployees);
+    } else {
+      document.getElementById('attendanceTableContainer').innerHTML = 
+        '<p style="color: #e74c3c;">Error loading attendance records: ' + (data.message || 'Unknown error') + '</p>';
+    }
+  } catch (error) {
+    document.getElementById('attendanceTableContainer').innerHTML = 
+      '<p style="color: #e74c3c;">Network error. Please try again.</p>';
+  }
+}
+
+function displayAttendanceRecords(records) {
+  const container = document.getElementById('attendanceTableContainer');
+  
+  if (records.length === 0) {
+    container.innerHTML = '<p>No attendance records found.</p>';
+    return;
+  }
+  
+  let html = `
+    <table class="attendance-table">
+      <tr>
+        <th>Date</th>
+        <th>Employee ID</th>
+        <th>Check In</th>
+        <th>Check Out</th>
+        <th>Hours Worked</th>
+        <th>Status</th>
+      </tr>
+  `;
+  
+  records.forEach(record => {
+    const checkIn = record.checkIn ? new Date(`2000-01-01 ${record.checkIn}`) : null;
+    const checkOut = record.checkOut ? new Date(`2000-01-01 ${record.checkOut}`) : null;
+    
+    let hoursWorked = 'N/A';
+    if (checkIn && checkOut) {
+      const diffMs = checkOut - checkIn;
+      const hours = Math.floor(diffMs / (1000 * 60 * 60));
+      const minutes = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
+      hoursWorked = `${hours}h ${minutes}m`;
+    }
+    
+    // Determine status and time badge
+    let status = record.status || 'Present';
+    let timeBadge = '';
+    let statusClass = 'status-present';
+    
+    if (record.checkIn) {
+      const checkInTime = new Date(`2000-01-01 ${record.checkIn}`);
+      const standardTime = new Date('2000-01-01 09:00:00');
+      const lateTime = new Date('2000-01-01 09:15:00');
+      
+      if (checkInTime <= standardTime) {
+        timeBadge = '<span class="time-badge time-normal">On Time</span>';
+      } else if (checkInTime <= lateTime) {
+        timeBadge = '<span class="time-badge time-late">Late</span>';
+        status = 'Late';
+        statusClass = 'status-late';
+      } else {
+        timeBadge = '<span class="time-badge time-late">Very Late</span>';
+        status = 'Late';
+        statusClass = 'status-late';
+      }
+    } else {
+      status = 'Absent';
+      statusClass = 'status-absent';
+      timeBadge = '<span class="time-badge time-late">Absent</span>';
+    }
+    
+    html += `
+      <tr>
+        <td>${record.date}</td>
+        <td>${record.empId}</td>
+        <td>${record.checkIn || 'Not checked in'} ${timeBadge}</td>
+        <td>${record.checkOut || 'Not checked out'}</td>
+        <td>${hoursWorked}</td>
+        <td class="${statusClass}">${status}</td>
+      </tr>
+    `;
+  });
+  
+  html += '</table>';
+  container.innerHTML = html;
+}
+
+function updateAttendanceStats(attendanceRecords, employees) {
+  const today = new Date().toISOString().split('T')[0];
+  const todayRecords = attendanceRecords.filter(r => r.date === today);
+  
+  const present = todayRecords.filter(r => r.checkIn).length;
+  const totalEmp = employees.length;
+  const absent = totalEmp - present;
+  
+  // Count late arrivals (after 9:15 AM)
+  const late = todayRecords.filter(r => {
+    if (!r.checkIn) return false;
+    const checkInTime = new Date(`2000-01-01 ${r.checkIn}`);
+    const lateTime = new Date('2000-01-01 09:15:00');
+    return checkInTime > lateTime;
+  }).length;
+  
+  document.getElementById('todayPresent').textContent = present;
+  document.getElementById('todayAbsent').textContent = absent;
+  document.getElementById('todayLate').textContent = late;
+  document.getElementById('totalEmployees').textContent = totalEmp;
+}
+
+function applyFilters() {
+  const employeeFilter = document.getElementById('employeeFilter').value.toLowerCase();
+  const dateFromFilter = document.getElementById('dateFromFilter').value;
+  const dateToFilter = document.getElementById('dateToFilter').value;
+  const statusFilter = document.getElementById('statusFilter').value;
+  
+  let filteredRecords = allAttendance.filter(record => {
+    // Employee filter
+    if (employeeFilter && !record.empId.toLowerCase().includes(employeeFilter)) return false;
+    
+    // Date range filter
+    if (dateFromFilter && record.date < dateFromFilter) return false;
+    if (dateToFilter && record.date > dateToFilter) return false;
+    
+    // Status filter
+    if (statusFilter) {
+      let recordStatus = 'Present';
+      if (!record.checkIn) {
+        recordStatus = 'Absent';
+      } else if (record.checkIn) {
+        const checkInTime = new Date(`2000-01-01 ${record.checkIn}`);
+        const lateTime = new Date('2000-01-01 09:15:00');
+        if (checkInTime > lateTime) {
+          recordStatus = 'Late';
+        }
+      }
+      
+      if (recordStatus !== statusFilter) return false;
+    }
+    
+    return true;
+  });
+  
+  displayAttendanceRecords(filteredRecords);
+}
+
+function clearFilters() {
+  document.getElementById('employeeFilter').value = '';
+  document.getElementById('dateFromFilter').value = '';
+  document.getElementById('dateToFilter').value = '';
+  document.getElementById('statusFilter').value = '';
+  displayAttendanceRecords(allAttendance);
+}
+
+function exportReport() {
+  const employeeFilter = document.getElementById('employeeFilter').value.toLowerCase();
+  const dateFromFilter = document.getElementById('dateFromFilter').value;
+  const dateToFilter = document.getElementById('dateToFilter').value;
+  const statusFilter = document.getElementById('statusFilter').value;
+  
+  // Apply current filters
+  applyFilters();
+  
+  // Get filtered data
+  let dataToExport = allAttendance;
+  if (employeeFilter || dateFromFilter || dateToFilter || statusFilter) {
+    // Apply the same filtering logic
+    dataToExport = allAttendance.filter(record => {
+      if (employeeFilter && !record.empId.toLowerCase().includes(employeeFilter)) return false;
+      if (dateFromFilter && record.date < dateFromFilter) return false;
+      if (dateToFilter && record.date > dateToFilter) return false;
+      
+      if (statusFilter) {
+        let recordStatus = 'Present';
+        if (!record.checkIn) {
+          recordStatus = 'Absent';
+        } else if (record.checkIn) {
+          const checkInTime = new Date(`2000-01-01 ${record.checkIn}`);
+          const lateTime = new Date('2000-01-01 09:15:00');
+          if (checkInTime > lateTime) {
+            recordStatus = 'Late';
+          }
+        }
+        if (recordStatus !== statusFilter) return false;
+      }
+      
+      return true;
+    });
+  }
+  
+  // Create CSV content
+  let csvContent = 'Date,Employee ID,Check In,Check Out,Hours Worked,Status\n';
+  
+  dataToExport.forEach(record => {
+    const checkIn = record.checkIn || 'Not checked in';
+    const checkOut = record.checkOut || 'Not checked out';
+    
+    let hoursWorked = 'N/A';
+    if (record.checkIn && record.checkOut) {
+      const checkInTime = new Date(`2000-01-01 ${record.checkIn}`);
+      const checkOutTime = new Date(`2000-01-01 ${record.checkOut}`);
+      const diffMs = checkOutTime - checkInTime;
+      const hours = Math.floor(diffMs / (1000 * 60 * 60));
+      const minutes = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
+      hoursWorked = `${hours}h ${minutes}m`;
+    }
+    
+    let status = record.status || 'Present';
+    if (!record.checkIn) {
+      status = 'Absent';
+    } else if (record.checkIn) {
+      const checkInTime = new Date(`2000-01-01 ${record.checkIn}`);
+      const lateTime = new Date('2000-01-01 09:15:00');
+      if (checkInTime > lateTime) {
+        status = 'Late';
+      }
+    }
+    
+    csvContent += `${record.date},${record.empId},"${checkIn}","${checkOut}","${hoursWorked}",${status}\n`;
+  });
+  
+  // Download CSV file
+  const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+  const link = document.createElement('a');
+  const url = URL.createObjectURL(blob);
+  link.setAttribute('href', url);
+  link.setAttribute('download', `attendance_report_${new Date().toISOString().split('T')[0]}.csv`);
+  link.style.visibility = 'hidden';
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  
+  alert('Attendance report exported successfully!');
+}
+
+// Set default date filters to current month
+function setDefaultFilters() {
+  const today = new Date();
+  const firstDay = new Date(today.getFullYear(), today.getMonth(), 1);
+  const lastDay = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+  
+  document.getElementById('dateFromFilter').value = firstDay.toISOString().split('T')[0];
+  document.getElementById('dateToFilter').value = lastDay.toISOString().split('T')[0];
+}
+
+// Logout function
+document.getElementById('logoutBtn').onclick = function() {
+  sessionStorage.removeItem('adminId');
+  window.location.href = 'admin-login.html';
+};
+
+// Load attendance data on page load
+document.addEventListener('DOMContentLoaded', () => {
+  setDefaultFilters();
+  loadAttendanceData();
+});
+</script>
+</body>
+</html>

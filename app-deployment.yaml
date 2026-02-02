@@ -1,0 +1,33 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: recruitment-app
+  namespace: docker-ns
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: recruitment-app
+  template:
+    metadata:
+      labels:
+        app: recruitment-app
+    spec:
+      containers:
+      - name: hr-app
+        image: mainakdas73/hr-app:1.0
+        ports:
+        - containerPort: 3000
+        env:
+        - name: MONGO_URL
+          value: mongodb://mongo:27017/testdb
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 3000
+          initialDelaySeconds: 10
+        livenessProbe:
+          httpGet:
+            path: /healthz
+            port: 3000
+          initialDelaySeconds: 20

@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Attendance - HR System</title>
+<link rel="stylesheet" href="style.css" />
+</head>
+<body>
+<header class="header">
+  <div class="container header-content">
+    <h1>Attendance</h1>
+    <nav>
+      <a href="dashboard.html" class="nav-link">Dashboard</a>
+      <button id="logoutBtn" class="btn-logout">Logout</button>
+    </nav>
+  </div>
+</header>
+
+<main class="container glass-card">
+  <h2>Mark Your Attendance</h2>
+  <div class="attendance-buttons">
+    <button id="checkInBtn" class="btn-primary">Check In</button>
+    <button id="checkOutBtn" class="btn-secondary" disabled>Check Out</button>
+  </div>
+  <p id="attendanceStatus" class="status-msg"></p>
+</main>
+
+<script src="script.js"></script>
+<script>
+// Attendance page logic
+if (document.getElementById('checkInBtn')) {
+  const checkInBtn = document.getElementById('checkInBtn');
+  const checkOutBtn = document.getElementById('checkOutBtn');
+  const attendanceStatus = document.getElementById('attendanceStatus');
+
+  // Fetch today's attendance status on load
+  document.addEventListener('DOMContentLoaded', () => {
+    fetch('/api/attendance/today')
+      .then(res => res.json())
+      .then(data => {
+        if (data.checkedIn) {
+          checkInBtn.disabled = true;
+          checkOutBtn.disabled = false;
+          attendanceStatus.textContent = 'Checked in at ' + data.checkInTime;
+        } else {
+          checkInBtn.disabled = false;
+          checkOutBtn.disabled = true;
+          attendanceStatus.textContent = '';
+        }
+      });
+  });
+
+  checkInBtn.addEventListener('click', () => {
+    fetch('/api/attendance/checkin', { method: 'POST' })
+      .then(res => res.json())
+      .then(data => {
+        if (data.time) {
+          checkInBtn.disabled = true;
+          checkOutBtn.disabled = false;
+          attendanceStatus.textContent = 'Checked in at ' + data.time;
+        } else {
+          attendanceStatus.textContent = data.message || 'Check-in failed.';
+        }
+      });
+  });
+
+  checkOutBtn.addEventListener('click', () => {
+    fetch('/api/attendance/checkout', { method: 'POST' })
+      .then(res => res.json())
+      .then(data => {
+        if (data.time) {
+          checkInBtn.disabled = false;
+          checkOutBtn.disabled = true;
+          attendanceStatus.textContent = 'Checked out at ' + data.time;
+        } else {
+          attendanceStatus.textContent = data.message || 'Check-out failed.';
+        }
+      });
+  });
+}

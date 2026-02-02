@@ -1,0 +1,19 @@
+version: "3.9"
+
+services:
+  mongo:
+    image: mongo:6.0
+    container_name: mongo
+    ports:
+      - "27017:27017"
+
+  app:
+    image: mainakdas73/hr-app:1.0
+    container_name: hr-app
+    ports:
+      - "3000:3000"
+    environment:
+      MONGO_URL: mongodb://mongo:27017/testdb
+      PORT: 3000
+    depends_on:
+      - mongo

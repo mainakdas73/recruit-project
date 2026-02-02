@@ -1,0 +1,463 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Leave Management - HR Admin</title>
+  <link rel="stylesheet" href="style.css" />
+  <style>
+    .filter-bar {
+      margin-bottom: 20px;
+      display: flex;
+      gap: 15px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+    
+    .filter-bar select, .filter-bar input {
+      margin: 0;
+      min-width: 150px;
+    }
+    
+    .leave-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 15px;
+      background: rgba(255, 255, 255, 0.9);
+      border-radius: 10px;
+      overflow: hidden;
+    }
+    
+    .leave-table th, .leave-table td {
+      padding: 12px;
+      text-align: left;
+      border-bottom: 1px solid #ddd;
+      color: #2c3e50;
+    }
+    
+    .leave-table th {
+      background-color: #3498db;
+      color: white;
+      font-weight: bold;
+    }
+    
+    .status-pending { color: #f39c12; font-weight: bold; }
+    .status-approved { color: #27ae60; font-weight: bold; }
+    .status-rejected { color: #e74c3c; font-weight: bold; }
+    
+    .action-buttons {
+      display: flex;
+      gap: 5px;
+    }
+    
+    .btn-small {
+      padding: 5px 10px;
+      font-size: 0.8rem;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-weight: bold;
+    }
+    
+    .btn-approve { background: #27ae60; color: white; }
+    .btn-reject { background: #e74c3c; color: white; }
+    .btn-view { background: #3498db; color: white; }
+    
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+      gap: 15px;
+      margin-bottom: 30px;
+    }
+    
+    .stat-item {
+      background: rgba(255, 255, 255, 0.15);
+      padding: 20px;
+      border-radius: 15px;
+      text-align: center;
+      color: #e8f0fe;
+    }
+    
+    .stat-number {
+      font-size: 2rem;
+      font-weight: bold;
+      color: #38a1db;
+    }
+    
+    .stat-label {
+      font-size: 0.9rem;
+      opacity: 0.9;
+    }
+    
+    .modal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0,0,0,0.5);
+      z-index: 1000;
+    }
+    
+    .modal-content {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: white;
+      padding: 30px;
+      border-radius: 15px;
+      width: 80%;
+      max-width: 600px;
+      max-height: 80vh;
+      overflow-y: auto;
+    }
+    
+    .modal h3 {
+      color: #2c3e50;
+      margin-bottom: 20px;
+    }
+    
+    .leave-details {
+      background: #f8f9fa;
+      padding: 15px;
+      border-radius: 8px;
+      margin-bottom: 15px;
+    }
+    
+    .leave-details strong {
+      display: inline-block;
+      width: 120px;
+      color: #2c3e50;
+    }
+  </style>
+</head>
+<body>
+<header class="header">
+  <div class="container header-content">
+    <h1>Leave Management</h1>
+    <nav>
+      <a href="admin-dashboard.html" class="nav-link">Dashboard</a>
+      <a href="admin-employees.html" class="nav-link">Employees</a>
+      <a href="admin-attendance.html" class="nav-link">Attendance</a>
+      <a href="admin-grievances.html" class="nav-link">Grievances</a>
+      <button id="logoutBtn" class="btn-logout">Logout</button>
+    </nav>
+  </div>
+</header>
+
+<main class="container">
+  <section>
+    <h2>Leave Request Statistics</h2>
+    <div class="stats-grid" id="leaveStats">
+      <div class="stat-item">
+        <div class="stat-number" id="totalLeaves">-</div>
+        <div class="stat-label">Total Requests</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-number" id="pendingLeaves">-</div>
+        <div class="stat-label">Pending</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-number" id="approvedLeaves">-</div>
+        <div class="stat-label">Approved</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-number" id="rejectedLeaves">-</div>
+        <div class="stat-label">Rejected</div>
+      </div>
+    </div>
+  </section>
+
+  <section style="background: rgba(255, 255, 255, 0.1); padding: 25px; border-radius: 18px;">
+    <h3 style="color: #e8f0fe; margin-bottom: 20px;">Leave Requests</h3>
+    
+    <div class="filter-bar">
+      <select id="statusFilter">
+        <option value="">All Status</option>
+        <option value="Pending">Pending</option>
+        <option value="Approved">Approved</option>
+        <option value="Rejected">Rejected</option>
+      </select>
+      
+      <input type="text" id="employeeFilter" placeholder="Filter by Employee ID..." />
+      
+      <input type="date" id="dateFromFilter" />
+      <input type="date" id="dateToFilter" />
+      
+      <button onclick="applyFilters()" class="btn-secondary">Apply Filters</button>
+      <button onclick="clearFilters()" class="btn-secondary">Clear</button>
+    </div>
+    
+    <div id="leaveTableContainer">
+      Loading leave requests...
+    </div>
+  </section>
+</main>
+
+<!-- Leave Details Modal -->
+<div id="leaveModal" class="modal">
+  <div class="modal-content">
+    <h3>Leave Request Details</h3>
+    <div id="leaveDetailsContainer"></div>
+    
+    <div id="actionSection" style="margin-top: 20px;">
+      <textarea id="adminComments" placeholder="Add comments (optional)..." rows="3" style="width: 100%; margin-bottom: 15px; padding: 10px; border-radius: 5px; border: 1px solid #ddd;"></textarea>
+      
+      <div style="display: flex; gap: 10px;">
+        <button id="approveBtn" class="btn-primary" style="background: #27ae60;">Approve Leave</button>
+        <button id="rejectBtn" class="btn-primary" style="background: #e74c3c;">Reject Leave</button>
+        <button onclick="closeLeaveModal()" class="btn-secondary">Close</button>
+      </div>
+    </div>
+    
+    <p id="leaveModalError" class="error-msg"></p>
+  </div>
+</div>
+
+<script>
+let allLeaves = [];
+let currentLeaveId = null;
+
+// Check admin authentication
+function checkAdminAuth() {
+  const adminId = sessionStorage.getItem('adminId');
+  if (!adminId) {
+    window.location.href = 'admin-login.html';
+    return false;
+  }
+  return true;
+}
+
+// Load all leave requests
+async function loadLeaveRequests() {
+  if (!checkAdminAuth()) return;
+  
+  try {
+    const response = await fetch('/api/admin/leaves');
+    const data = await response.json();
+    
+    if (response.ok) {
+      allLeaves = data;
+      displayLeaveRequests(allLeaves);
+      updateLeaveStats(allLeaves);
+    } else {
+      document.getElementById('leaveTableContainer').innerHTML = 
+        '<p style="color: #e74c3c;">Error loading leave requests: ' + (data.message || 'Unknown error') + '</p>';
+    }
+  } catch (error) {
+    document.getElementById('leaveTableContainer').innerHTML = 
+      '<p style="color: #e74c3c;">Network error. Please try again.</p>';
+  }
+}
+
+function displayLeaveRequests(leaves) {
+  const container = document.getElementById('leaveTableContainer');
+  
+  if (leaves.length === 0) {
+    container.innerHTML = '<p>No leave requests found.</p>';
+    return;
+  }
+  
+  let html = `
+    <table class="leave-table">
+      <tr>
+        <th>Employee ID</th>
+        <th>From Date</th>
+        <th>To Date</th>
+        <th>Days</th>
+        <th>Reason</th>
+        <th>Applied Date</th>
+        <th>Status</th>
+        <th>Actions</th>
+      </tr>
+  `;
+  
+  leaves.forEach(leave => {
+    const fromDate = new Date(leave.startDate);
+    const toDate = new Date(leave.endDate);
+    const days = Math.ceil((toDate - fromDate) / (1000 * 60 * 60 * 24)) + 1;
+    
+    html += `
+      <tr>
+        <td>${leave.empId}</td>
+        <td>${leave.startDate}</td>
+        <td>${leave.endDate}</td>
+        <td>${days}</td>
+        <td>${leave.leaveReason.length > 30 ? leave.leaveReason.substring(0, 30) + '...' : leave.leaveReason}</td>
+        <td>${new Date(leave.appliedAt).toLocaleDateString()}</td>
+        <td class="status-${leave.status.toLowerCase()}">${leave.status}</td>
+        <td>
+          <div class="action-buttons">
+            <button class="btn-small btn-view" onclick="viewLeaveDetails('${leave._id}')">View</button>
+            ${leave.status === 'Pending' ? 
+              `<button class="btn-small btn-approve" onclick="quickApprove('${leave._id}')">Approve</button>
+               <button class="btn-small btn-reject" onclick="quickReject('${leave._id}')">Reject</button>` : 
+              ''}
+          </div>
+        </td>
+      </tr>
+    `;
+  });
+  
+  html += '</table>';
+  container.innerHTML = html;
+}
+
+function updateLeaveStats(leaves) {
+  const total = leaves.length;
+  const pending = leaves.filter(l => l.status === 'Pending').length;
+  const approved = leaves.filter(l => l.status === 'Approved').length;
+  const rejected = leaves.filter(l => l.status === 'Rejected').length;
+  
+  document.getElementById('totalLeaves').textContent = total;
+  document.getElementById('pendingLeaves').textContent = pending;
+  document.getElementById('approvedLeaves').textContent = approved;
+  document.getElementById('rejectedLeaves').textContent = rejected;
+}
+
+function applyFilters() {
+  const statusFilter = document.getElementById('statusFilter').value;
+  const employeeFilter = document.getElementById('employeeFilter').value.toLowerCase();
+  const dateFromFilter = document.getElementById('dateFromFilter').value;
+  const dateToFilter = document.getElementById('dateToFilter').value;
+  
+  let filteredLeaves = allLeaves.filter(leave => {
+    // Status filter
+    if (statusFilter && leave.status !== statusFilter) return false;
+    
+    // Employee filter
+    if (employeeFilter && !leave.empId.toLowerCase().includes(employeeFilter)) return false;
+    
+    // Date range filter
+    if (dateFromFilter && new Date(leave.startDate) < new Date(dateFromFilter)) return false;
+    if (dateToFilter && new Date(leave.startDate) > new Date(dateToFilter)) return false;
+    
+    return true;
+  });
+  
+  displayLeaveRequests(filteredLeaves);
+}
+
+function clearFilters() {
+  document.getElementById('statusFilter').value = '';
+  document.getElementById('employeeFilter').value = '';
+  document.getElementById('dateFromFilter').value = '';
+  document.getElementById('dateToFilter').value = '';
+  displayLeaveRequests(allLeaves);
+}
+
+function viewLeaveDetails(leaveId) {
+  const leave = allLeaves.find(l => l._id === leaveId);
+  if (!leave) return;
+  
+  currentLeaveId = leaveId;
+  const fromDate = new Date(leave.startDate);
+  const toDate = new Date(leave.endDate);
+  const days = Math.ceil((toDate - fromDate) / (1000 * 60 * 60 * 24)) + 1;
+  
+  const detailsHtml = `
+    <div class="leave-details">
+      <div><strong>Employee ID:</strong> ${leave.empId}</div>
+      <div><strong>From Date:</strong> ${leave.startDate}</div>
+      <div><strong>To Date:</strong> ${leave.endDate}</div>
+      <div><strong>Total Days:</strong> ${days}</div>
+      <div><strong>Leave Type:</strong> ${leave.leaveType || 'General'}</div>
+      <div><strong>Reason:</strong> ${leave.leaveReason}</div>
+      <div><strong>Applied Date:</strong> ${new Date(leave.appliedAt).toLocaleString()}</div>
+      <div><strong>Status:</strong> <span class="status-${leave.status.toLowerCase()}">${leave.status}</span></div>
+      ${leave.adminComments ? `<div><strong>Admin Comments:</strong> ${leave.adminComments}</div>` : ''}
+      ${leave.reviewedAt ? `<div><strong>Reviewed At:</strong> ${new Date(leave.reviewedAt).toLocaleString()}</div>` : ''}
+    </div>
+  `;
+  
+  document.getElementById('leaveDetailsContainer').innerHTML = detailsHtml;
+  
+  // Show/hide action buttons based on status
+  const actionSection = document.getElementById('actionSection');
+  if (leave.status === 'Pending') {
+    actionSection.style.display = 'block';
+  } else {
+    actionSection.style.display = 'none';
+  }
+  
+  document.getElementById('leaveModal').style.display = 'block';
+}
+
+function closeLeaveModal() {
+  document.getElementById('leaveModal').style.display = 'none';
+  document.getElementById('adminComments').value = '';
+  document.getElementById('leaveModalError').textContent = '';
+}
+
+async function quickApprove(leaveId) {
+  if (!confirm('Are you sure you want to approve this leave request?')) return;
+  await updateLeaveStatus(leaveId, 'Approved', '');
+}
+
+async function quickReject(leaveId) {
+  if (!confirm('Are you sure you want to reject this leave request?')) return;
+  await updateLeaveStatus(leaveId, 'Rejected', '');
+}
+
+async function updateLeaveStatus(leaveId, status, comments) {
+  try {
+    const response = await fetch(`/api/admin/leaves/${leaveId}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ 
+        status: status,
+        adminComments: comments 
+      })
+    });
+    
+    if (response.ok) {
+      alert(`Leave request ${status.toLowerCase()} successfully!`);
+      closeLeaveModal();
+      loadLeaveRequests(); // Reload the list
+    } else {
+      const data = await response.json();
+      const errorElement = document.getElementById('leaveModalError');
+      if (errorElement) {
+        errorElement.textContent = data.message || 'Update failed';
+      } else {
+        alert('Failed to update leave request: ' + (data.message || 'Unknown error'));
+      }
+    }
+  } catch (error) {
+    const errorElement = document.getElementById('leaveModalError');
+    if (errorElement) {
+      errorElement.textContent = 'Network error. Please try again.';
+    } else {
+      alert('Network error. Please try again.');
+    }
+  }
+}
+
+// Modal action buttons
+document.getElementById('approveBtn').onclick = function() {
+  const comments = document.getElementById('adminComments').value;
+  updateLeaveStatus(currentLeaveId, 'Approved', comments);
+};
+
+document.getElementById('rejectBtn').onclick = function() {
+  const comments = document.getElementById('adminComments').value;
+  if (!comments.trim()) {
+    document.getElementById('leaveModalError').textContent = 'Please provide a reason for rejection.';
+    return;
+  }
+  updateLeaveStatus(currentLeaveId, 'Rejected', comments);
+};
+
+// Logout function
+document.getElementById('logoutBtn').onclick = function() {
+  sessionStorage.removeItem('adminId');
+  window.location.href = 'admin-login.html';
+};
+
+// Load leave requests on page load
+document.addEventListener('DOMContentLoaded', loadLeaveRequests);
+</script>
+</body>
+</html>

@@ -1,0 +1,18 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: hr-app
+  namespace: argocd
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/mainakdas73/recruitment-project.git
+    path: .
+    targetRevision: main
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: docker-ns
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true

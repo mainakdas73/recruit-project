@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Dashboard - HR System</title>
+<link rel="stylesheet" href="style.css" />
+</head>
+<body>
+<header class="header">
+  <div class="container header-content">
+    <h1>Welcome, <span id="empName">Employee</span></h1>
+    <nav>
+      <a href="attendance.html" class="nav-link">Attendance</a>
+      <a href="apply_leave.html" class="nav-link">Apply Leave</a>
+      <a href="leave_balance.html" class="nav-link">Leave Balance</a>
+      <button id="logoutBtn" class="btn-logout">Logout</button>
+      <a href="onboarding.html" class="nav-link">Onboarding</a>
+      <a href="hiring_process.html" class="nav-link">Hiring Process</a>
+      <a href="grievance.html" class="nav-link">Grievance</a>
+    </nav>
+  </div>
+</header>
+
+<main class="container glass-card dashboard-main">
+  <section>
+    <h2>Quick Actions</h2>
+    <div class="card-grid">
+      <a href="attendance.html" class="card">Mark Attendance</a>
+      <a href="apply_leave.html" class="card">Apply for Leave</a>
+      <a href="leave_balance.html" class="card">View Leave Balance</a>
+      <a href="onboarding.html" class="card">Onboarding Details</a>
+      <a href="hiring_process.html" class="card">Hiring Feedback</a>
+    </div>
+  </section>
+  <section>
+    <h2>HR Chatbot Assistant</h2>
+    <div id="chatbotWindow" class="chatbot-window">
+      <div id="chatbotMessages" class="chatbot-messages"></div>
+      <div class="chatbot-input-area">
+        <input type="text" id="chatbotInput" placeholder="Ask about leaves, policies, or holidays..." />
+        <button id="chatbotSendBtn" class="btn-primary">Send</button>
+      </div>
+    </div>
+  </section>
+</main>
+
+<script src="script.js"></script>
+<script>
+  // ...existing code...
+
+// Onboarding page logic
+if (document.getElementById('onboardingInfo')) {
+  document.addEventListener('DOMContentLoaded', async () => {
+    const onboardingInfo = document.getElementById('onboardingInfo');
+    try {
+      const res = await fetch('/api/onboarding');
+      const data = await res.json();
+      if (res.ok) {
+        onboardingInfo.textContent = data.details || 'No onboarding info found.';
+      } else {
+        onboardingInfo.textContent = data.message || 'Failed to load onboarding info.';
+      }
+    } catch {
+      onboardingInfo.textContent = 'Server error. Please try again.';
+    }
+  });
+
+  document.getElementById('updateOnboardingBtn').addEventListener('click', async () => {
+    const newDetails = prompt('Enter your updated onboarding info:');
+    if (!newDetails) return;
+    try {
+      const res = await fetch('/api/onboarding', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ details: newDetails })
+      });
+      const data = await res.json();
+      if (res.ok) {
+        document.getElementById('onboardingInfo').textContent = data.details;
+        alert('Onboarding info updated!');
+      } else {
+        alert(data.message || 'Update failed.');
+      }
+    } catch {
+      alert('Server error. Please try again.');
+    }
+  });
+}
+
+// ...existing code...
+</script>
+</body>
+</html>
