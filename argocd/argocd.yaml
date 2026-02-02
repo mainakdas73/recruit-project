@@ -8,7 +8,7 @@ spec:
   source:
     repoURL: https://github.com/mainakdas73/recruitment-project.git
     path: .
-    targetRevision: main
+    targetRevision: hr-repo
   destination:
     server: https://kubernetes.default.svc
     namespace: docker-ns
