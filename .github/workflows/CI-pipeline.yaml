@@ -42,6 +42,6 @@ jobs:
 
     - name: Deploy to Kubernetes
       run: |
-        kubectl set image deployment/hr-app \
+        kubectl set image deployment/recruitment-app \
           hr-app=mainakdas73/hr-app:${{ github.sha }} \
           -n docker-ns
