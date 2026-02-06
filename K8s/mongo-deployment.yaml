@@ -2,6 +2,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: mongo
+  namespace: docker-ns
 spec:
   replicas: 1
   selector:
@@ -17,9 +18,31 @@ spec:
         image: mongo:6.0
         ports:
         - containerPort: 27017
+
+        # MongoDB auth initialization
+        env:
+        - name: MONGO_INITDB_ROOT_USERNAME
+          valueFrom:
+            secretKeyRef:
+              name: mongo-secret
+              key: username
+
+        - name: MONGO_INITDB_ROOT_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: mongo-secret
+              key: password
+
+        - name: MONGO_INITDB_DATABASE
+          valueFrom:
+            configMapKeyRef:
+              name: mongo-config
+              key: MONGO_DB
+
         volumeMounts:
         - name: mongo-persistent-storage
           mountPath: /data/db
+
       volumes:
       - name: mongo-persistent-storage
         persistentVolumeClaim:
