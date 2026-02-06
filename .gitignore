@@ -1,4 +1,3 @@
 *.txt
-*.docx
 *azure*
 .gitignore/workflows/*
